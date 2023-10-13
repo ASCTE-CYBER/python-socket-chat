@@ -28,14 +28,14 @@ def handle_messages(connection: socket.socket):
             connection.close()
             break
 
-def client() -> None:
+def client(ip_address: str, port: int) -> None:
     '''
         Main process that start client connection to the server
         and handle it's input messages
     '''
 
-    SERVER_ADDRESS = '127.0.0.1'
-    SERVER_PORT = 12000
+    SERVER_ADDRESS = ip_address
+    SERVER_PORT = port
 
     try:
         # Instantiate socket and start connection with server
@@ -67,4 +67,6 @@ def client() -> None:
 
 
 if __name__ == "__main__":
-    client()
+    ip_address = input('Enter server IP address: ')
+    port = int(input('Enter server port: '))
+    client(ip_address, port)

@@ -1,16 +1,16 @@
-import socket, threading
+import socket, threading, sys, getpass
 from pprint import pprint
 
 # Global variable that mantain client's connections
 connections = []
 
-def handle_user_connection(connection: socket.socket, address: str) -> None:
+def handle_user_connection(connection: socket.socket, address: str, password: str) -> None:
     '''
         Get user connection in order to keep receiving their messages and
         sent to others users/connections.
     '''
     CORRECT_PASS = False
-    PASS = 'Halloween'
+    PASS = password
     while True:
         try:
             # Get client message
@@ -43,34 +43,6 @@ def handle_user_connection(connection: socket.socket, address: str) -> None:
             print(f'Error to handle user connection: {e}')
             remove_connection(connection)
             break
-
-
-def handle_password(connection: socket.socket, address: str) -> None:
-        while True:
-            try:
-                # Get client message
-                msg = connection.recv(1024)
-
-                # If no message is received, there is a chance that connection has ended
-                # so in this case, we need to close connection and remove it from connections list.
-                if msg:
-                    # Log message sent by user
-                    print(f'{address[0]}:{address[1]} - {msg.decode()}')
-
-                    # Build message format and broadcast to users connected on server
-                    msg_to_send = f'From {address[0]}:{address[1]} - {msg.decode()}'
-                    #broadcast(msg_to_send, connection)
-                    unicast(msg_to_send, connection)
-
-                # Close connection if no message was sent
-                else:
-                    remove_connection(connection)
-                    break
-
-            except Exception as e:
-                print(f'Error to handle user connection: {e}')
-                remove_connection(connection)
-                break
 
 
 def broadcast(message: str, connection: socket.socket) -> None:
@@ -114,13 +86,13 @@ def remove_connection(conn: socket.socket) -> None:
         connections.remove(conn)
 
 
-def server() -> None:
+def server(port=12000, password='admin') -> None:
     '''
         Main process that receive client's connections and start a new thread
         to handle their messages
     '''
 
-    LISTENING_PORT = 12000
+    LISTENING_PORT = port
 
     try:
         # Create server and specifying that it can only handle 4 connections by time!
@@ -138,7 +110,7 @@ def server() -> None:
             connections.append(socket_connection)
             # Start a new thread to handle client connection and receive it's messages
             # in order to send to others connections
-            threading.Thread(target=handle_user_connection, args=[socket_connection, address]).start()
+            threading.Thread(target=handle_user_connection, args=[socket_connection, address, password]).start()
 
     except Exception as e:
         print(f'An error has occurred when instancing socket: {e}')
@@ -152,4 +124,6 @@ def server() -> None:
 
 
 if __name__ == "__main__":
-    server()
+    password = getpass.getpass('Set password: ')
+    port = int(input('Set port: '))
+    server(port, password)
