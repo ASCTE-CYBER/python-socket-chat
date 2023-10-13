@@ -1,4 +1,5 @@
 import socket, threading
+from pprint import pprint
 
 # Global variable that mantain client's connections
 connections = []
@@ -8,20 +9,30 @@ def handle_user_connection(connection: socket.socket, address: str) -> None:
         Get user connection in order to keep receiving their messages and
         sent to others users/connections.
     '''
+    CORRECT_PASS = False
+    PASS = 'Halloween'
     while True:
         try:
             # Get client message
-            msg = connection.recv(1024)
+            msg = connection.recv(1024).decode()
 
             # If no message is received, there is a chance that connection has ended
             # so in this case, we need to close connection and remove it from connections list.
             if msg:
                 # Log message sent by user
-                print(f'{address[0]}:{address[1]} - {msg.decode()}')
-                
+                print(f'{address[0]}:{address[1]} - {msg}')
+
+                if msg == PASS:
+                    CORRECT_PASS = True
+
                 # Build message format and broadcast to users connected on server
-                msg_to_send = f'From {address[0]}:{address[1]} - {msg.decode()}'
-                broadcast(msg_to_send, connection)
+                #msg_to_send = f'From {address[0]}:{address[1]} - {msg.decode()}'
+                if CORRECT_PASS:
+                    msg_to_send = 'advanced_student@hacked-server#'
+                else:
+                    msg_to_send = f'Enter password: '
+                #broadcast(msg_to_send, connection)
+                unicast(msg_to_send, connection)
 
             # Close connection if no message was sent
             else:
@@ -32,6 +43,34 @@ def handle_user_connection(connection: socket.socket, address: str) -> None:
             print(f'Error to handle user connection: {e}')
             remove_connection(connection)
             break
+
+
+def handle_password(connection: socket.socket, address: str) -> None:
+        while True:
+            try:
+                # Get client message
+                msg = connection.recv(1024)
+
+                # If no message is received, there is a chance that connection has ended
+                # so in this case, we need to close connection and remove it from connections list.
+                if msg:
+                    # Log message sent by user
+                    print(f'{address[0]}:{address[1]} - {msg.decode()}')
+
+                    # Build message format and broadcast to users connected on server
+                    msg_to_send = f'From {address[0]}:{address[1]} - {msg.decode()}'
+                    #broadcast(msg_to_send, connection)
+                    unicast(msg_to_send, connection)
+
+                # Close connection if no message was sent
+                else:
+                    remove_connection(connection)
+                    break
+
+            except Exception as e:
+                print(f'Error to handle user connection: {e}')
+                remove_connection(connection)
+                break
 
 
 def broadcast(message: str, connection: socket.socket) -> None:
@@ -53,6 +92,16 @@ def broadcast(message: str, connection: socket.socket) -> None:
                 remove_connection(client_conn)
 
 
+def unicast(message: str, connection: socket.socket) -> None:
+    try:
+        connection.send(message.encode())
+    except Exception as e:
+        print('Error broadcasting message: {e}')
+        remove_connection(client_conn)
+
+
+
+
 def remove_connection(conn: socket.socket) -> None:
     '''
         Remove specified connection from connections list
@@ -72,15 +121,15 @@ def server() -> None:
     '''
 
     LISTENING_PORT = 12000
-    
+
     try:
         # Create server and specifying that it can only handle 4 connections by time!
         socket_instance = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_instance.bind(('', LISTENING_PORT))
-        socket_instance.listen(4)
+        socket_instance.listen(25)
 
         print('Server running!')
-        
+
         while True:
 
             # Accept client connection

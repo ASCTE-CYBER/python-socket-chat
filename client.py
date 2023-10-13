@@ -1,4 +1,9 @@
-import socket, threading
+import socket, threading, sys
+
+def write_msg(msg):
+    sys.stdout.flush()
+    sys.stdout.write(msg)
+    sys.stdout.flush()
 
 def handle_messages(connection: socket.socket):
     '''
@@ -7,13 +12,13 @@ def handle_messages(connection: socket.socket):
 
     while True:
         try:
-            msg = connection.recv(1024)
+            msg = connection.recv(1024).decode()
 
             # If there is no message, there is a chance that connection has closed
             # so the connection will be closed and an error will be displayed.
             # If not, it will try to decode message in order to show to user.
             if msg:
-                print(msg.decode())
+                write_msg(msg)
             else:
                 connection.close()
                 break
@@ -25,7 +30,7 @@ def handle_messages(connection: socket.socket):
 
 def client() -> None:
     '''
-        Main process that start client connection to the server 
+        Main process that start client connection to the server
         and handle it's input messages
     '''
 
@@ -43,7 +48,9 @@ def client() -> None:
 
         # Read user's input until it quit from chat and close connection
         while True:
-            msg = input()
+            msg = input().strip()
+            if len(msg) == 0:
+                msg = ' '
 
             if msg == 'quit':
                 break
