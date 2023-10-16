@@ -1,16 +1,18 @@
-import socket, threading, sys, getpass
+import socket, threading, sys, getpass, time
 from pprint import pprint
 
 # Global variable that mantain client's connections
 connections = []
 
-def handle_user_connection(connection: socket.socket, address: str, password: str) -> None:
+def handle_user_connection(connection: socket.socket, address: str, password: str, timeout=True, attempt_limit=3) -> None:
     '''
         Get user connection in order to keep receiving their messages and
         sent to others users/connections.
     '''
     CORRECT_PASS = False
     PASS = password
+    wait = 0
+    attempts = 0
     while True:
         try:
             # Get client message
@@ -24,6 +26,16 @@ def handle_user_connection(connection: socket.socket, address: str, password: st
 
                 if msg == PASS:
                     CORRECT_PASS = True
+
+                if not CORRECT_PASS:
+                    if timeout:
+                        wait += 0.1
+                        time.sleep(wait)
+
+                if not CORRECT_PASS:
+                    attempts += 1
+                    if attempts == attempt_limit:
+                        remove_connection(connection)
 
                 # Build message format and broadcast to users connected on server
                 #msg_to_send = f'From {address[0]}:{address[1]} - {msg.decode()}'
